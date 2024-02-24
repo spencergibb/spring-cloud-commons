@@ -14,26 +14,24 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.client.loadbalancer;
+package org.springframework.cloud.bootstrap.encrypt;
 
-import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpRequest;
+import org.springframework.aot.hint.MemberCategory;
+import org.springframework.aot.hint.RuntimeHints;
+import org.springframework.aot.hint.RuntimeHintsRegistrar;
 
 /**
- * Allows applications to transform the load-balanced {@link HttpRequest} given the chosen
- * {@link ServiceInstance}.
+ * {@link RuntimeHintsRegistrar} for {@code RsaSecretEncryptor}.
  *
- * @author Will Tran
+ * @author Dave Syer
  */
-@Order(LoadBalancerRequestTransformer.DEFAULT_ORDER)
-public interface LoadBalancerRequestTransformer {
+class EncryptionRuntimeHints implements RuntimeHintsRegistrar {
 
-	/**
-	 * Order for the load balancer request transformer.
-	 */
-	int DEFAULT_ORDER = 0;
-
-	HttpRequest transformRequest(HttpRequest request, ServiceInstance instance);
+	@Override
+	public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
+		hints.reflection().registerTypeIfPresent(classLoader,
+				"org.springframework.security.rsa.crypto.RsaSecretEncryptor",
+				MemberCategory.INVOKE_DECLARED_CONSTRUCTORS);
+	}
 
 }

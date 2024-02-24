@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,20 @@
 
 package org.springframework.cloud.client.loadbalancer;
 
-import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpRequest;
+import org.springframework.web.client.RestClient;
 
 /**
- * Allows applications to transform the load-balanced {@link HttpRequest} given the chosen
- * {@link ServiceInstance}.
+ * A customizer interface for {@link RestClient.Builder}. Used to set
+ * {@link LoadBalancerInterceptor} on the builder at the end of the singleton
+ * pre-instantiation phase.
  *
- * @author Will Tran
+ * @author Olga Maciaszek-Sharma
+ * @since 4.1.1
+ * @deprecated to be removed in the next major release.
  */
-@Order(LoadBalancerRequestTransformer.DEFAULT_ORDER)
-public interface LoadBalancerRequestTransformer {
+@Deprecated(forRemoval = true)
+public interface RestClientBuilderCustomizer {
 
-	/**
-	 * Order for the load balancer request transformer.
-	 */
-	int DEFAULT_ORDER = 0;
-
-	HttpRequest transformRequest(HttpRequest request, ServiceInstance instance);
+	void customize(RestClient.Builder restClientBuilder);
 
 }

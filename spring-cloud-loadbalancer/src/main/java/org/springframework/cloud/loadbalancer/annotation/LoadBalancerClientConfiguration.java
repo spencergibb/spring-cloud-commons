@@ -48,6 +48,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.retry.support.RetryTemplate;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -143,6 +144,15 @@ public class LoadBalancerClientConfiguration {
 					.build(context);
 		}
 
+		@Bean
+		@ConditionalOnBean(ReactiveDiscoveryClient.class)
+		@ConditionalOnMissingBean
+		@Conditional(SubsetConfigurationCondition.class)
+		public ServiceInstanceListSupplier subsetServiceInstanceListSupplier(ConfigurableApplicationContext context) {
+			return ServiceInstanceListSupplier.builder().withDiscoveryClient().withSubset().withCaching()
+					.build(context);
+		}
+
 	}
 
 	@Configuration(proxyBeanMethods = false)
@@ -180,6 +190,16 @@ public class LoadBalancerClientConfiguration {
 		}
 
 		@Bean
+		@ConditionalOnBean({ DiscoveryClient.class, RestClient.class })
+		@ConditionalOnMissingBean
+		@Conditional(HealthCheckConfigurationCondition.class)
+		public ServiceInstanceListSupplier healthCheckRestClientDiscoveryClientServiceInstanceListSupplier(
+				ConfigurableApplicationContext context) {
+			return ServiceInstanceListSupplier.builder().withBlockingDiscoveryClient()
+					.withBlockingRestClientHealthChecks().build(context);
+		}
+
+		@Bean
 		@ConditionalOnBean(DiscoveryClient.class)
 		@ConditionalOnMissingBean
 		@Conditional(RequestBasedStickySessionConfigurationCondition.class)
@@ -205,6 +225,15 @@ public class LoadBalancerClientConfiguration {
 		@Conditional(WeightedConfigurationCondition.class)
 		public ServiceInstanceListSupplier weightedServiceInstanceListSupplier(ConfigurableApplicationContext context) {
 			return ServiceInstanceListSupplier.builder().withBlockingDiscoveryClient().withCaching().withWeighted()
+					.build(context);
+		}
+
+		@Bean
+		@ConditionalOnBean(DiscoveryClient.class)
+		@ConditionalOnMissingBean
+		@Conditional(SubsetConfigurationCondition.class)
+		public ServiceInstanceListSupplier subsetServiceInstanceListSupplier(ConfigurableApplicationContext context) {
+			return ServiceInstanceListSupplier.builder().withBlockingDiscoveryClient().withSubset().withCaching()
 					.build(context);
 		}
 
@@ -349,6 +378,16 @@ public class LoadBalancerClientConfiguration {
 		public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
 			return LoadBalancerEnvironmentPropertyUtils.equalToForClientOrDefault(context.getEnvironment(),
 					"configurations", "weighted");
+		}
+
+	}
+
+	static class SubsetConfigurationCondition implements Condition {
+
+		@Override
+		public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+			return LoadBalancerEnvironmentPropertyUtils.equalToForClientOrDefault(context.getEnvironment(),
+					"configurations", "subset");
 		}
 
 	}

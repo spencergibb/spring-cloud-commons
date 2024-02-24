@@ -44,12 +44,13 @@ NOTE: The classes you pass as `@LoadBalancerClient` or `@LoadBalancerClients` co
 [[spring-cloud-loadbalancer-integrations]]
 == Spring Cloud LoadBalancer integrations
 
-In order to make it easy to use Spring Cloud LoadBalancer, we provide `ReactorLoadBalancerExchangeFilterFunction` that can be used with `WebClient` and `BlockingLoadBalancerClient` that works with `RestTemplate`.
+To make it easy to use Spring Cloud LoadBalancer, we provide `ReactorLoadBalancerExchangeFilterFunction` (which can be used with `WebClient`) and `BlockingLoadBalancerClient` (which works with `RestTemplate` and `RestClient`).
 You can see more information and examples of usage in the following sections:
 
-* xref:spring-cloud-commons/common-abstractions.adoc#rest-template-loadbalancer-client[Spring RestTemplate as a Load Balancer Client]
-* xref:spring-cloud-commons/common-abstractions.adoc#webclinet-loadbalancer-client[Spring WebClient as a Load Balancer Client]
-* xref:spring-cloud-commons/common-abstractions.adoc#webflux-with-reactive-loadbalancer[Spring WebFlux WebClient with `ReactorLoadBalancerExchangeFilterFunction`]
+* xref:spring-cloud-commons/common-abstractions.adoc#rest-template-loadbalancer-client[Spring `RestTemplate` as a LoadBalancer Client]
+* xref:spring-cloud-commons/common-abstractions.adoc#rest-client-loadbalancer-client[Spring `RestClient` as a LoadBalancer Client]
+* xref:spring-cloud-commons/common-abstractions.adoc#webclinet-loadbalancer-client[Spring `WebClient` as a LoadBalancer Client]
+* xref:spring-cloud-commons/common-abstractions.adoc#webflux-with-reactive-loadbalancer[Spring `WebFlux WebClient` with `ReactorLoadBalancerExchangeFilterFunction`]
 
 [[loadbalancer-caching]]
 == Spring Cloud LoadBalancer Caching
@@ -232,7 +233,7 @@ public class CustomLoadBalancerConfiguration {
 ----
 
 TIP: For the non-reactive stack, create this supplier with the `withBlockingHealthChecks()`.
-You can also pass your own `WebClient` or `RestTemplate` instance to be used for the checks.
+You can also pass your own `WebClient`, `RestTemplate` or `RestClient` instance to be used for the checks.
 
 WARNING: `HealthCheckServiceInstanceListSupplier` has its own caching mechanism based on Reactor Flux `replay()`. Therefore, if it's being used, you may want to skip wrapping that supplier with `CachingServiceInstanceListSupplier`.
 
@@ -336,7 +337,7 @@ public class CustomLoadBalancerConfiguration {
 
 You can use the selected `ServiceInstance` to transform the load-balanced HTTP Request.
 
-For `RestTemplate`, you need to implement and define `LoadBalancerRequestTransformer` as follows:
+For `RestTemplate` and `RestClient`, you need to implement and define `LoadBalancerRequestTransformer` as follows:
 
 [source,java,indent=0]
 ----
@@ -378,6 +379,34 @@ For `WebClient`, you need to implement and define `LoadBalancerClientRequestTran
 
 If multiple transformers are defined, they are applied in the order in which Beans are defined.
 Alternatively, you can use `LoadBalancerRequestTransformer.DEFAULT_ORDER` or `LoadBalancerClientRequestTransformer.DEFAULT_ORDER` to specify the order.
+
+[[loadbalancer-subset]]
+== Spring Cloud LoadBalancer Subset
+
+`SubsetServiceInstanceListSupplier` implements a https://sre.google/sre-book/load-balancing-datacenter/[deterministic subsetting algorithm] to select a limited number of instances in the `ServiceInstanceListSupplier` delegates hierarchy.
+
+You can configure it either by setting the value of `spring.cloud.loadbalancer.configurations` to `subset` or by providing your own `ServiceInstanceListSupplier` bean -- for example:
+
+[[subset-custom-loadbalancer-configuration-example]]
+[source,java,indent=0]
+----
+public class CustomLoadBalancerConfiguration {
+
+	@Bean
+	public ServiceInstanceListSupplier discoveryClientServiceInstanceListSupplier(
+			ConfigurableApplicationContext context) {
+		return ServiceInstanceListSupplier.builder()
+					.withDiscoveryClient()
+					.withSubset()
+					.withCaching()
+					.build(context);
+	    }
+	}
+----
+
+TIP: By default, each service instance is assigned a unique `instanceId`, and different `instanceId` values often select different subsets. Normally, you need not pay attention to it. However, if you need to have multiple instances select the same subset, you can set it with `spring.cloud.loadbalancer.subset.instance-id` (which supports placeholders).
+
+TIP: By default, the size of the subset is set to 100. You can also set it with `spring.cloud.loadbalancer.subset.size`.
 
 [[spring-cloud-loadbalancer-starter]]
 == Spring Cloud LoadBalancer Starter
