@@ -1,0 +1,13 @@
+feature:
+  flags:
+    my-boolean-flag:
+      variants:
+        enabled: true
+        disabled: false
+      default-variant: enabled
+    my-string-flag:
+      variants:
+        variant1: "variant1"
+        variant2: "string-flag-value"
+        variant3: "variant3"
+      default-variant: variant2
